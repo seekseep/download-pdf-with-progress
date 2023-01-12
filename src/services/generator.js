@@ -2,17 +2,17 @@
 /**
  * @param {Generator} generator
  * @param {{
- *   onEnd: (result) => void
  *   onProcess: (process) => void
+ *   onSuccess: (result) => void
  * }} events
  */
-export function execGeneratorWithProgress (generator, { onEnd, onProcess }) {
+export function execGeneratorWithProgress (generator, { onSuccess, onProcess }) {
   const result = generator.next()
   if (result.done) {
-    onEnd(result.value)
+    onSuccess(result.value)
     return
   }
 
   onProcess(result.value)
-  requestAnimationFrame(() => execGeneratorWithProgress(generator, { onEnd, onProcess }))
+  requestAnimationFrame(() => execGeneratorWithProgress(generator, { onSuccess, onProcess }))
 }

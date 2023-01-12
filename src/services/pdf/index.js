@@ -1,4 +1,5 @@
 import Pdf from 'jspdf'
+import { execGeneratorWithProgress } from 'services/generator'
 import { getPlaceholderImage } from 'services/render'
 
 function getProgressValue (parentValue, parentMax, childValue, childMax) {
@@ -38,4 +39,12 @@ export function * getGetPdfGenerator (pageCount = 1) {
   }
 
   return pdf
+}
+
+export function downloadPdf (pageCount, { onProcess, onSuccess }) {
+  const getPdfGenerator = getGetPdfGenerator(pageCount)
+  execGeneratorWithProgress(getPdfGenerator, {
+    onProcess,
+    onSuccess
+  })
 }

@@ -1,32 +1,24 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { execGeneratorWithProgress } from 'services/generator'
 
-import { getGetPdfGenerator } from 'services/pdf'
+import { downloadPdf } from 'services/pdf'
 
 function DownloadPdf () {
-  const [progress, setProgress] = useState({
-    value: 0,
-    message: ''
-  })
-  const [isLoading, setIsLoading] = useState(false)
+  const [progress, setProgress] = useState(null)
 
   const { register, handleSubmit, formState: { errors } } = useForm()
   const onSubmit = data => {
-    setProgress(0)
-    setIsLoading(true)
-
-    const getPdfGenerator = getGetPdfGenerator(+data.pageCount)
-    execGeneratorWithProgress(getPdfGenerator, {
-      onProcess: (progress) => {
-        setProgress(progress)
-      },
-      onEnd: (pdf) => {
-        pdf.save(`sample_${new Date().getTime()}.pdf`)
-        setIsLoading(false)
+    setProgress({ value: 0, message: '' })
+    downloadPdf(+data.pageCount, {
+      onProcess: (progress) => setProgress(progress),
+      onSuccess: (pdf) => {
+        pdf.save(`${new Date().getTime()}.pdf`)
+        setProgress(null)
       }
     })
   }
+
+  const isLoading = !!progress
 
   return (
     <>
