@@ -1,43 +1,31 @@
 import Pdf from 'jspdf'
 import { getPlaceholderImage } from 'services/render'
 
+function getProgres (offset, max, value) {
+  return offset + max * value
+}
+
 /**
  *
  * @param {number} pageCount
  */
-export function downloadPdf (pageCount = 1, {
-  onUpdateProgress,
-  onEnd
-}) {
+export function * getGetPdfGenerator (pageCount = 1) {
   if (typeof pageCount !== 'number') throw Error('Invalid type pageCount')
 
-  let p = 0
-
-  let pdf = null
-
-  function end () {
-    pdf.save(`sample_${new Date().toLocaleDateString()}_${new Date().toLocaleTimeString()}.pdf`)
-    onEnd()
-  }
-
-  function step () {
-    if (p > pageCount) return end()
-
-    if (p > 0) pdf.addPage()
+  const images = []
+  for (let i = 0; i < pageCount; i++) {
     const image = getPlaceholderImage()
+    images.push(image)
+    yield { value: getProgres(0, 1 / 2, (i + 1) / pageCount), message: `Image ${i + 1}/${pageCount}` }
+  }
+
+  const pdf = new Pdf({ format: 'a4' })
+  for (const page in images) {
+    const image = images[page]
+    if (page > 0) pdf.addPage()
     pdf.addImage(image, 'png', 0, 0, 210, 297)
-
-    onUpdateProgress(p / pageCount)
-    p += 1
-    requestAnimationFrame(step)
+    yield { value: getProgres(1 / 2, 1 / 2, (page + 1) / images.length), message: `Pdf Page ${(+page + 1)}/${images.length}` }
   }
 
-  function start () {
-    pdf = new Pdf({
-      format: 'a4'
-    })
-    requestAnimationFrame(step)
-  }
-
-  requestAnimationFrame(start)
+  return pdf
 }

@@ -1,19 +1,30 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { execGeneratorWithProgress } from 'services/generator'
 
-import { downloadPdf } from 'services/pdf'
+import { getGetPdfGenerator } from 'services/pdf'
 
 function DownloadPdf () {
-  const [progress, setProgress] = useState(0)
+  const [progress, setProgress] = useState({
+    value: 0,
+    message: ''
+  })
   const [isLoading, setIsLoading] = useState(false)
 
   const { register, handleSubmit, formState: { errors } } = useForm()
   const onSubmit = data => {
     setProgress(0)
     setIsLoading(true)
-    downloadPdf(+data.pageCount, {
-      onUpdateProgress: progress => setProgress(progress),
-      onEnd: () => setIsLoading(false)
+
+    const getPdfGenerator = getGetPdfGenerator(+data.pageCount)
+    execGeneratorWithProgress(getPdfGenerator, {
+      onProcess: (progress) => {
+        setProgress(progress)
+      },
+      onEnd: (pdf) => {
+        pdf.save(`sample_${new Date().getTime()}.pdf`)
+        setIsLoading(false)
+      }
     })
   }
 
@@ -23,14 +34,15 @@ function DownloadPdf () {
       <form onSubmit={handleSubmit(onSubmit)}>
         <div>
           <label htmlFor="pageCountInput">Page Count</label><br />
-          <input id="pageCountInput" type="number" defaultValue={100} min={1} max={999} step={1} {...register('pageCount')} />
+          <input id="pageCountInput" type="number" defaultValue={50} min={1} max={999} step={1} {...register('pageCount')} />
           {errors.pageCount && <p>{errors.pageCount}</p>}
         </div>
         {!isLoading && <button type="submit">Download</button>}
         {isLoading && (
           <>
-            <div>{Math.floor(progress * 100)}%</div>
-            <progress max="1" value={progress}>{Math.floor(progress * 100)}%</progress><br />
+            <div>{Math.floor(progress.value * 100)}%</div>
+            <div>{progress.message}</div>
+            <progress max="1" value={progress.value}>{Math.floor(progress.value * 100)}%</progress><br />
             <button disabled type="submit">Downloading</button>
           </>
         )}
